@@ -12,18 +12,18 @@
     />
 
     <!-- Primary SEO -->
-    <title>AARAMBH | Student Entrepreneurship & Innovation Community</title>
+    <title>AARAMBH | Student Entrepreneurship &amp; Innovation Community</title>
 
     <meta
       name="description"
-      content="Join AARAMBH, a community helping students and aspiring founders explore entrepreneurship, connect with builders, discover opportunities, and turn ideas into action."
+      content="Join AARAMBH, a student-led community helping aspiring founders explore entrepreneurship, connect with builders and mentors, discover opportunities, and turn ideas into action."
     />
 
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#080d1a" />
     <meta name="color-scheme" content="dark" />
 
-    <!-- Canonical URL -->
+    <!-- Canonical URL: Homepage -->
     <link
       rel="canonical"
       href="https://aarambh-community.vercel.app/"
@@ -57,7 +57,7 @@
     />
     <meta
       property="og:description"
-      content="Connect with aspiring founders, explore entrepreneurship, discover opportunities, and take your first step toward building something meaningful with AARAMBH."
+      content="A student-led community connecting aspiring founders, students, builders, mentors, and innovators to explore entrepreneurship and turn ideas into action."
     />
     <meta
       property="og:image"
@@ -82,6 +82,43 @@
       name="twitter:image"
       content="https://aarambh-community.vercel.app/assets/aarambh-logo.png"
     />
+
+    <!-- Structured Data: AARAMBH Community and Website -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://aarambh-community.vercel.app/#organization",
+            "name": "AARAMBH",
+            "description": "A student-led entrepreneurship and innovation community connecting students, aspiring founders, builders, mentors, and curious minds.",
+            "url": "https://aarambh-community.vercel.app/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://aarambh-community.vercel.app/assets/aarambh-logo.png"
+            },
+            "email": "aarambh.community.team@gmail.com",
+            "telephone": "+916304939885",
+            "founder": {
+              "@type": "Person",
+              "name": "Sandarsh Jeripothula"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://aarambh-community.vercel.app/#website",
+            "url": "https://aarambh-community.vercel.app/",
+            "name": "AARAMBH",
+            "description": "The First Step of Entrepreneurship",
+            "publisher": {
+              "@id": "https://aarambh-community.vercel.app/#organization"
+            },
+            "inLanguage": "en-IN"
+          }
+        ]
+      }
+    </script>
 
     <!-- Website Language -->
     <meta http-equiv="content-language" content="en" />
