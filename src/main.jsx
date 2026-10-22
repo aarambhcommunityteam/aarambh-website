@@ -9,7 +9,9 @@ import './styles.css';
 
 const email = 'aarambh.community.team@gmail.com';
 const whatsapp = 'https://wa.me/916304939885';
-const siteUrl = (import.meta.env.VITE_SITE_URL || '').replace(/\/$/, '');
+const siteUrl = (
+  import.meta.env.VITE_SITE_URL || 'https://aarambh-community.vercel.app'
+).replace(/\/$/, '');
 const logo = '/assets/aarambh-logo.png';
 const founderPhoto = '/assets/founder-photo.jpg';
 
@@ -813,38 +815,58 @@ function SEO() {
       description: 'Explore AARAMBH, the first step of entrepreneurship.'
     };
 
+    const pageUrl = `${siteUrl}${path === '/' ? '/' : path}`;
+    const socialImage = `${siteUrl}/assets/aarambh-logo.png`;
+
     document.title = page.title;
 
     const setMeta = (selector, attribute, value) => {
       let element = document.head.querySelector(selector);
+
       if (!element) {
         element = document.createElement('meta');
-        const [key, keyValue] = selector.match(/\[(name|property)="([^"]+)"\]/).slice(1);
-        element.setAttribute(key, keyValue);
+        const match = selector.match(/\[(name|property)="([^"]+)"\]/);
+        if (!match) return;
+
+        element.setAttribute(match[1], match[2]);
         document.head.appendChild(element);
       }
+
       element.setAttribute('content', value);
     };
 
+    // Primary SEO
     setMeta('meta[name="description"]', 'content', page.description);
+
+    // Open Graph metadata
+    setMeta('meta[property="og:site_name"]', 'content', 'AARAMBH');
     setMeta('meta[property="og:title"]', 'content', page.title);
     setMeta('meta[property="og:description"]', 'content', page.description);
     setMeta('meta[property="og:type"]', 'content', 'website');
+    setMeta('meta[property="og:url"]', 'content', pageUrl);
+    setMeta('meta[property="og:image"]', 'content', socialImage);
+    setMeta(
+      'meta[property="og:image:alt"]',
+      'content',
+      'AARAMBH — The First Step of Entrepreneurship'
+    );
+
+    // Twitter / X metadata
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:title"]', 'content', page.title);
     setMeta('meta[name="twitter:description"]', 'content', page.description);
+    setMeta('meta[name="twitter:image"]', 'content', socialImage);
 
+    // Canonical URL for the current route
     let canonical = document.head.querySelector('link[rel="canonical"]');
-    if (siteUrl) {
-      if (!canonical) {
-        canonical = document.createElement('link');
-        canonical.rel = 'canonical';
-        document.head.appendChild(canonical);
-      }
-      canonical.href = `${siteUrl}${path === '/' ? '/' : path}`;
-    } else if (canonical) {
-      canonical.remove();
+
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
     }
+
+    canonical.href = pageUrl;
   }, [location.pathname]);
 
   return null;
