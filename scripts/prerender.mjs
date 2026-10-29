@@ -13,7 +13,7 @@ import { extname, join, resolve, sep } from 'node:path';
 
 const dist = resolve('dist');
 const baseUrl = 'http://127.0.0.1:4178';
-const siteUrl = 'https://aarambh-community.vercel.app';
+const siteUrl = 'https://aarambh-community.in';
 
 const routes = [
   '/',

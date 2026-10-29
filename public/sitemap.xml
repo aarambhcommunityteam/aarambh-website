@@ -1,32 +1,30 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aarambh-community.vercel.app/</loc>
+    <loc>https://aarambh-community.in/</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/about</loc>
+    <loc>https://aarambh-community.in/events</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/community</loc>
+    <loc>https://aarambh-community.in/members</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/opportunities</loc>
+    <loc>https://aarambh-community.in/gallery</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/events</loc>
+    <loc>https://aarambh-community.in/resources</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/founder</loc>
+    <loc>https://aarambh-community.in/blog</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/join</loc>
+    <loc>https://aarambh-community.in/contact</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/contact</loc>
+    <loc>https://aarambh-community.in/founder</loc>
   </url>
   <url>
-    <loc>https://aarambh-community.vercel.app/privacy</loc>
-  </url>
-  <url>
-    <loc>https://aarambh-community.vercel.app/terms</loc>
+    <loc>https://aarambh-community.in/irdp</loc>
   </url>
 </urlset>
