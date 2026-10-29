@@ -1,0 +1,102 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* AARAMBH global theme */
+:root {
+  color-scheme: dark;
+  background: #080d1a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  min-height: 100%;
+  background: #080d1a;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: #080d1a;
+  color: #f9fafb;
+  @apply font-sans;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Prevent media from expanding beyond their containers. */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+/* Let long content wrap instead of forcing horizontal scrolling. */
+h1,
+h2,
+h3,
+h4,
+p,
+a,
+button,
+label {
+  overflow-wrap: anywhere;
+}
+
+/* Touch-friendly controls and visible keyboard focus. */
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid #19c8ff;
+  outline-offset: 3px;
+}
+
+/* Shared gradient utility. */
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
