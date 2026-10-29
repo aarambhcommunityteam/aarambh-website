@@ -17,15 +17,14 @@ const siteUrl = 'https://aarambh-community.vercel.app';
 
 const routes = [
   '/',
-  '/about',
-  '/community',
-  '/opportunities',
   '/events',
-  '/founder',
-  '/join',
+  '/members',
+  '/gallery',
+  '/resources',
+  '/blog',
   '/contact',
-  '/privacy',
-  '/terms',
+  '/founder',
+  '/irdp',
 ];
 
 const pageMetadata = {
@@ -34,50 +33,45 @@ const pageMetadata = {
     description:
       'Discover AARAMBH, an entrepreneurship and innovation community connecting students, aspiring founders, builders, mentors, and curious minds.',
   },
-  '/about': {
-    title: 'About AARAMBH | Our Mission and Vision',
-    description:
-      'Discover AARAMBH, our mission, vision, and commitment to entrepreneurship and innovation.',
-  },
-  '/community': {
-    title: 'Community | AARAMBH',
-    description:
-      'Explore the AARAMBH community of students, founders, mentors, innovators, and aspiring entrepreneurs.',
-  },
-  '/opportunities': {
-    title: 'Startup Opportunities | AARAMBH',
-    description:
-      'Discover startup opportunities, learning experiences, and ways to take your first step with AARAMBH.',
-  },
   '/events': {
-    title: 'Events and Gatherings | AARAMBH',
+    title: 'Events | AARAMBH Community',
     description:
-      'Discover AARAMBH events and gatherings that bring aspiring entrepreneurs and innovators together.',
+      'Explore startup, technology, and entrepreneurship events from the AARAMBH community.',
   },
-  '/founder': {
-    title: 'Founder | Sandarsh Jeripothula | AARAMBH',
+  '/members': {
+    title: 'Our Members | AARAMBH Community',
     description:
-      'Meet Sandarsh Jeripothula, founder of AARAMBH, an entrepreneurship and innovation community.',
+      'Meet the members and teams contributing to the AARAMBH entrepreneurship and innovation community.',
   },
-  '/join': {
-    title: 'Join AARAMBH | Take Your First Step',
+  '/gallery': {
+    title: 'Gallery | AARAMBH Community',
     description:
-      'Join AARAMBH to connect with aspiring founders, innovators, mentors, and the entrepreneurship community.',
+      'Explore photos and highlights from AARAMBH community activities and events.',
+  },
+  '/resources': {
+    title: 'Resources | AARAMBH Community',
+    description:
+      'Explore learning resources and useful material for students, builders, and aspiring founders.',
+  },
+  '/blog': {
+    title: 'Blog | AARAMBH Community',
+    description:
+      'Read articles, insights, and updates about entrepreneurship, technology, and innovation.',
   },
   '/contact': {
     title: 'Contact AARAMBH | Get in Touch',
     description:
-      'Get in touch with the AARAMBH team about our entrepreneurship community and collaboration opportunities.',
+      'Contact the AARAMBH team about entrepreneurship, community activities, and collaborations.',
   },
-  '/privacy': {
-    title: 'Privacy Policy | AARAMBH',
+  '/founder': {
+    title: 'Founder | AARAMBH Community',
     description:
-      'Read the AARAMBH privacy policy to understand how information is handled.',
+      'Learn about the founder of AARAMBH and the vision behind the entrepreneurship community.',
   },
-  '/terms': {
-    title: 'Terms of Use | AARAMBH',
+  '/irdp': {
+    title: 'IRDP | AARAMBH Community',
     description:
-      'Read the terms of use for the AARAMBH website and community.',
+      'Explore the AARAMBH IRDP initiative and its activities.',
   },
 };
 
@@ -300,6 +294,53 @@ if (process.env.VERCEL === '1') {
             requestAnimationFrame(resolve)
           )
         );
+      });
+
+      const routeMetadata = pageMetadata[route];
+
+      await page.evaluate(({ url, title, description }) => {
+        document.title = title;
+
+        let canonical = document.querySelector('link[rel="canonical"]');
+        if (!canonical) {
+          canonical = document.createElement('link');
+          canonical.rel = 'canonical';
+          document.head.appendChild(canonical);
+        }
+        canonical.href = url;
+
+        const updateMeta = (selector, attribute, value, create) => {
+          let element = document.querySelector(selector);
+          if (!element) {
+            element = document.createElement('meta');
+            create(element);
+            document.head.appendChild(element);
+          }
+          element.setAttribute(attribute, value);
+        };
+
+        updateMeta('meta[name="description"]', 'content', description, el => {
+          el.name = 'description';
+        });
+        updateMeta('meta[property="og:url"]', 'content', url, el => {
+          el.setAttribute('property', 'og:url');
+        });
+        updateMeta('meta[property="og:title"]', 'content', title, el => {
+          el.setAttribute('property', 'og:title');
+        });
+        updateMeta('meta[property="og:description"]', 'content', description, el => {
+          el.setAttribute('property', 'og:description');
+        });
+        updateMeta('meta[name="twitter:title"]', 'content', title, el => {
+          el.name = 'twitter:title';
+        });
+        updateMeta('meta[name="twitter:description"]', 'content', description, el => {
+          el.name = 'twitter:description';
+        });
+      }, {
+        url: `${siteUrl}${route === '/' ? '/' : route}`,
+        title: routeMetadata.title,
+        description: routeMetadata.description,
       });
 
       const metadata = await page.evaluate(() => ({
