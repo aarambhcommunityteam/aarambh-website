@@ -26,7 +26,7 @@ const Blog = () => {
         const { data, error } = await supabase
           .from("blog_posts")
           .select(
-            "id,title,excerpt,author,date,category,image_url,read_time,status,created_at"
+            "id,title,slug,excerpt,content,author,published_at,category,cover_image_url,status,created_at"
           )
           .eq("status", "published")
           .order("created_at", { ascending: false });
@@ -164,10 +164,10 @@ const Blog = () => {
                   whileHover={{ y: -6 }}
                   className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700"
                 >
-                  {post.image_url && (
+                  {post.cover_image_url && (
                     <div className="relative overflow-hidden h-48">
                       <img
-                        src={post.image_url}
+                        src={post.cover_image_url}
                         alt={post.title}
                         className="w-full h-full object-cover"
                         loading="lazy"
@@ -198,18 +198,18 @@ const Blog = () => {
                         </span>
                       )}
 
-                      {post.date && (
+                      {post.published_at && (
                         <span className="flex items-center">
                           <Calendar className="w-4 h-4 mr-2" />
-                          {post.date}
+                          {new Date(post.published_at).toLocaleDateString()}
                         </span>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between gap-3">
-                      {post.read_time && (
+                      {post.content && (
                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {post.read_time}
+                          {Math.max(1, Math.ceil(post.content.trim().split(/\s+/).length / 200))} min read
                         </span>
                       )}
 

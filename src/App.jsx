@@ -14,6 +14,7 @@ import Gallery from './pages/Gallery';
 import Resources from './pages/Resources';
 import ResourceDetail from './pages/ResourceDetail';
 import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
 import Contact from './pages/Contact';
 import Admin from './pages/Admin';
 import Builder from './pages/Builder';
@@ -39,6 +40,7 @@ function App() {
               <Route path="/resources" element={<Resources />} />
               <Route path="/resources/:slug" element={<ResourceDetail />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:postId" element={<BlogDetail />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/builder" element={<Builder />} />
