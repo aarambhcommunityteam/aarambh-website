@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Plus,
   Edit2,
@@ -19,6 +19,9 @@ import {
   EyeOff,
 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+import ImageField from "./ImageField";
+import { saveWithImages } from "../../lib/imageUploads";
+import { contentError } from "../../lib/contentPayloads";
 
 const TEAM_OPTIONS = [
   "Lead Organizer",
@@ -37,104 +40,7 @@ const POSITION_OPTIONS = [
   { value: "executive", label: "Executive" },
 ];
 
-const ImageUpload = ({ value, onChange, label, onFileSelect, preview }) => {
-  const [dragActive, setDragActive] = useState(false);
-
-  const handleFile = (file) => {
-    if (!file || !file.type.startsWith("image/")) {
-      alert("Please upload an image file");
-      return;
-    }
-    onFileSelect(file);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleRemove = () => {
-    onChange("");
-    onFileSelect(null);
-  };
-
-  const displayImage = preview || value;
-
-  return (
-    <div className="space-y-2">
-      {label && (
-        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 block">
-          {label}
-        </label>
-      )}
-      <div
-        className={`relative border-2 border-dashed rounded-2xl p-4 transition-all ${
-          dragActive
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-            : "border-gray-300 dark:border-gray-600 hover:border-gray-400"
-        }`}
-        onDrop={handleDrop}
-        onDragOver={handleDrag}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-      >
-        {displayImage ? (
-          <div className="flex items-center gap-4">
-            <img
-              src={displayImage}
-              alt="Preview"
-              className="w-20 h-20 rounded-xl object-cover border-2 border-gray-200 dark:border-gray-700"
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-                {preview ? "Image selected (will upload on save)" : "Image uploaded"}
-              </p>
-              <button
-                type="button"
-                onClick={handleRemove}
-                className="text-xs text-red-500 hover:text-red-600 font-medium mt-1"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center">
-            <div className="flex justify-center mb-2">
-              <Upload className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Drag & drop image here or click to browse
-            </p>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const MemberForm = ({ member, onSubmit, onCancel, isLoading, onFileSelect, profileImagePreview, profileImageFile }) => {
+const MemberForm = ({ member, onSubmit, onCancel, isLoading, onFileSelect, profileImageFile }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -166,7 +72,7 @@ const MemberForm = ({ member, onSubmit, onCancel, isLoading, onFileSelect, profi
       : POSITION_OPTIONS.filter((p) => p.value !== "lead");
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit}><fieldset disabled={isLoading} className="space-y-6">
       {/* Basic Info */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 space-y-4">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -299,12 +205,13 @@ const MemberForm = ({ member, onSubmit, onCancel, isLoading, onFileSelect, profi
           <ImageIcon className="w-5 h-5 text-green-500" />
           Profile Image
         </h3>
-        <ImageUpload
+        <ImageField
+          kind="member"
           value={formData.profile_image_url}
-          onChange={(url) => handleChange("profile_image_url", url)}
-          onFileSelect={onFileSelect}
-          preview={profileImagePreview}
-          label="Member Photo"
+          file={profileImageFile}
+          onFileChange={onFileSelect}
+          onRemove={() => handleChange('profile_image_url', '')}
+          disabled={isLoading}
         />
       </div>
 
@@ -395,7 +302,7 @@ const MemberForm = ({ member, onSubmit, onCancel, isLoading, onFileSelect, profi
           )}
         </button>
       </div>
-    </form>
+    </fieldset></form>
   );
 };
 
@@ -548,113 +455,45 @@ const MembersManager = ({ members, onCreate, onEdit, onDelete, isLoading }) => {
   const [editingMember, setEditingMember] = useState(null);
   const [filter, setFilter] = useState("all");
   const [profileImageFile, setProfileImageFile] = useState(null);
-  const [profileImagePreview, setProfileImagePreview] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const busy = useRef(false);
   const [saving, setSaving] = useState(false);
 
-  const handleFileSelect = (file) => {
-    if (file) {
-      setProfileImageFile(file);
-      const previewUrl = URL.createObjectURL(file);
-      setProfileImagePreview(previewUrl);
-    } else {
-      setProfileImageFile(null);
-      setProfileImagePreview("");
-    }
-  };
-
-  const uploadProfileImage = async (memberId) => {
-    if (!profileImageFile) return null;
-
-    try {
-      const fileExt = profileImageFile.name.split(".").pop();
-      const filePath = `${memberId}/profile.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("member-profiles")
-        .upload(filePath, profileImageFile, {
-          cacheControl: "3600",
-          upsert: true,
-        });
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("member-profiles").getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error("Error uploading profile image:", error);
-      throw error;
-    }
-  };
+  const handleFileSelect = file => setProfileImageFile(file);
 
   const handleSubmit = async (formData) => {
+    if (busy.current) return;
+    busy.current = true;
     setSaving(true);
+    setSaveError('');
     try {
-      if (editingMember) {
-        // Update existing member
-        let finalData = { ...formData };
-
-        // Upload new image if selected
-        if (profileImageFile) {
-          const imageUrl = await uploadProfileImage(editingMember.id);
-          if (imageUrl) {
-            finalData.profile_image_url = imageUrl;
-          }
-        }
-
-        await onEdit(editingMember.id, finalData);
-      } else {
-        // Create new member - first create without image
-        const tempData = { ...formData };
-        delete tempData.profile_image_url; // Remove image URL for now
-
-        // Create member and get the ID
-        const savedMember = await onCreate(tempData);
-
-        // Upload image if provided
-        if (profileImageFile && savedMember?.id) {
-          const imageUrl = await uploadProfileImage(savedMember.id);
-          if (imageUrl) {
-            // Update member with image URL - pass all fields
-            await onEdit(savedMember.id, { 
-              ...formData,
-              profile_image_url: imageUrl,
-              is_active: true 
-            });
-          }
-        }
-      }
-
-      // Reset form state
+      await saveWithImages(supabase, formData, [{ file: profileImageFile, kind: 'member', field: 'profile_image_url' }],
+        payload => editingMember ? onEdit(editingMember.id, payload) : onCreate({ ...payload, is_active: false }));
       setShowForm(false);
       setEditingMember(null);
       setProfileImageFile(null);
-      setProfileImagePreview("");
-    } catch (error) {
-      console.error("Error saving member:", error);
-      alert("Failed to save member: " + error.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (error) { setSaveError(contentError(error)); }
+    finally { busy.current = false; setSaving(false); }
   };
 
   const handleEdit = (member) => {
+    if (busy.current) return;
     setEditingMember(member);
     setShowForm(true);
     setProfileImageFile(null);
-    setProfileImagePreview("");
+    setSaveError("");
   };
 
   const handleCancel = () => {
+    if (busy.current) return;
     setShowForm(false);
     setEditingMember(null);
     setProfileImageFile(null);
-    setProfileImagePreview("");
+    setSaveError("");
   };
 
   const handleToggleStatus = async (member) => {
+    if (busy.current) return;
     try {
       // The parent maps is_active to the database's is_published field.
       await onEdit(member.id, {
@@ -677,6 +516,8 @@ const MembersManager = ({ members, onCreate, onEdit, onDelete, isLoading }) => {
 
   return (
     <div className="space-y-6">
+      {saveError && <p role="alert" className="rounded-xl bg-red-50 dark:bg-red-900/30 p-4 text-red-700 dark:text-red-200">{saveError}</p>}
+      {showForm && !editingMember && <p className="text-sm text-gray-600 dark:text-gray-300">New members are saved as hidden. Use the eye button on their card to publish the profile.</p>}
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -718,7 +559,7 @@ const MembersManager = ({ members, onCreate, onEdit, onDelete, isLoading }) => {
             onCancel={handleCancel}
             isLoading={saving}
             onFileSelect={handleFileSelect}
-            profileImagePreview={profileImagePreview}
+
             profileImageFile={profileImageFile}
           />
         </div>

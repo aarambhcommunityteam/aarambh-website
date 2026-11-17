@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Plus,
   Calendar,
@@ -15,6 +15,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+import ImageField from "./ImageField";
+import { saveWithImages } from "../../lib/imageUploads";
+import { contentError } from "../../lib/contentPayloads";
 
 const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
   const [isCreating, setIsCreating] = useState(false);
@@ -41,105 +44,20 @@ const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
     prizes: [],
   };
 
-  const [uploadingCover, setUploadingCover] = useState(false);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [bannerImageFile, setBannerImageFile] = useState(null);
-  const [coverImagePreview, setCoverImagePreview] = useState("");
-  const [bannerImagePreview, setBannerImagePreview] = useState("");
-
   const [formData, setFormData] = useState(initialFormState);
-
-  // Handle file selection (don't upload yet)
-  const handleFileSelect = (file, type = 'cover') => {
-    if (!file) return;
-
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    
-    if (type === 'cover') {
-      setCoverImageFile(file);
-      setCoverImagePreview(previewUrl);
-    } else {
-      setBannerImageFile(file);
-      setBannerImagePreview(previewUrl);
-    }
-  };
-
-  // Upload images to storage with event ID folder structure
-  const uploadEventImages = async (eventId) => {
-    const urls = {
-      cover_image_url: formData.cover_image_url,
-      banner_image_url: formData.banner_image_url
-    };
-
-    try {
-      // Upload cover image if file selected
-      if (coverImageFile) {
-        setUploadingCover(true);
-        const fileExt = coverImageFile.name.split('.').pop();
-        const filePath = `${eventId}/cover.${fileExt}`;
-
-        // Delete old cover image if exists
-        await supabase.storage
-          .from('event-images')
-          .remove([filePath]);
-
-        const { error: uploadError } = await supabase.storage
-          .from('event-images')
-          .upload(filePath, coverImageFile, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('event-images')
-          .getPublicUrl(filePath);
-
-        urls.cover_image_url = publicUrl;
-      }
-
-      // Upload banner image if file selected
-      if (bannerImageFile) {
-        setUploadingBanner(true);
-        const fileExt = bannerImageFile.name.split('.').pop();
-        const filePath = `${eventId}/banner.${fileExt}`;
-
-        // Delete old banner image if exists
-        await supabase.storage
-          .from('event-images')
-          .remove([filePath]);
-
-        const { error: uploadError } = await supabase.storage
-          .from('event-images')
-          .upload(filePath, bannerImageFile, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('event-images')
-          .getPublicUrl(filePath);
-
-        urls.banner_image_url = publicUrl;
-      }
-
-      return urls;
-    } catch (error) {
-      console.error('Upload error:', error);
-      throw error;
-    } finally {
-      setUploadingCover(false);
-      setUploadingBanner(false);
-    }
-  };
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [detailsError, setDetailsError] = useState('');
+  const busy = useRef(false);
 
   const startEditing = async (event) => {
     setEditingId(event.id);
+    setCoverImageFile(null);
+    setBannerImageFile(null);
+    setSaveError('');
+    setDetailsError('');
     setIsCreating(true);
     setFormData({
       ...initialFormState,
@@ -167,6 +85,7 @@ const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
         supabase.from("event_prizes").select("*").eq("event_id", event.id),
       ]);
 
+      for (const result of [timelineRes, themesRes, prizesRes]) { if (result.error) throw result.error; }
       setFormData((prev) => ({
         ...prev,
         timeline: timelineRes.data || [],
@@ -174,6 +93,7 @@ const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
         prizes: prizesRes.data || [],
       }));
     } catch (err) {
+      setDetailsError("Unable to load event details. Close this form and try again before saving.");
       console.error("Failed to load details:", err);
     } finally {
       setLoadingDetails(false);
@@ -182,38 +102,33 @@ const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    if (busy.current || loadingDetails || detailsError) return;
+    busy.current = true;
+    setSaving(true);
+    setSaveError('');
     try {
-      // First save event to get event ID
-      const savedEvent = await onSave(formData, Boolean(editingId), editingId);
-      
-      // If we have files to upload and got an event ID back
-      if ((coverImageFile || bannerImageFile) && savedEvent?.id) {
-        const imageUrls = await uploadEventImages(savedEvent.id);
-        
-        // Update event with image URLs
-        await onSave(
-          { ...formData, ...imageUrls },
-          true,
-          savedEvent.id
-        );
-      }
-      
-      resetForm();
-    } catch (error) {
-      console.error('Error saving event:', error);
-      alert(`Failed to save event: ${error.message}`);
-    }
+      await saveWithImages(supabase, formData, [
+        { file: coverImageFile, kind: 'eventCover', field: 'cover_image_url' },
+        { file: bannerImageFile, kind: 'eventBanner', field: 'banner_image_url' },
+      ], payload => onSave(payload, Boolean(editingId), editingId));
+      setFormData(initialFormState);
+      setCoverImageFile(null);
+      setBannerImageFile(null);
+      setIsCreating(false);
+      setEditingId(null);
+    } catch (error) { setSaveError(contentError(error)); }
+    finally { busy.current = false; setSaving(false); }
   };
 
   const resetForm = () => {
+    if (busy.current) return;
     setFormData(initialFormState);
     setCoverImageFile(null);
     setBannerImageFile(null);
-    setCoverImagePreview("");
-    setBannerImagePreview("");
     setIsCreating(false);
     setEditingId(null);
+    setSaveError('');
+    setDetailsError('');
   };
 
   // --- Timeline Helpers ---
@@ -335,7 +250,9 @@ const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-10">
+            {(saveError || detailsError) && <p role="alert" className="mb-6 rounded-xl bg-red-50 dark:bg-red-900/30 p-4 text-red-700 dark:text-red-200">{saveError || detailsError}</p>}
+            <form onSubmit={handleSubmit}>
+              <fieldset disabled={saving || loadingDetails || Boolean(detailsError)} className="space-y-10">
               {/* Basic Info Section */}
               <div className="space-y-6">
                 <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800 pb-2">
@@ -525,79 +442,10 @@ const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4" />
-                      Cover Image (Square/Portrait - for cards)
-                    </label>
-                    <div className="flex gap-4">
-                      <div className="w-24 h-24 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden shrink-0">
-                        {(coverImagePreview || formData.cover_image_url) ? (
-                          <img
-                            src={coverImagePreview || formData.cover_image_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ImageIcon className="text-gray-300" />
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0], 'cover')}
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm outline-none focus:border-sharda-blue file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-sharda-blue file:text-white file:cursor-pointer hover:file:bg-blue-600"
-                        />
-                        <input
-                          type="url"
-                          placeholder="Or paste image URL"
-                          value={formData.cover_image_url}
-                          onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm outline-none focus:border-sharda-blue"
-                        />
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Upload file or paste URL. Images will be saved when you create the event.
-                        </p>
-                      </div>
-                    </div>
+                    <ImageField kind="eventCover" file={coverImageFile} value={formData.cover_image_url} onFileChange={setCoverImageFile} onRemove={() => setFormData({ ...formData, cover_image_url: '' })} disabled={saving} />
                   </div>
-
                   <div className="md:col-span-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4" />
-                      Banner Image (Wide - for event detail page)
-                    </label>
-                    <div className="flex gap-4">
-                      <div className="w-32 h-18 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden shrink-0">
-                        {(bannerImagePreview || formData.banner_image_url) ? (
-                          <img
-                            src={bannerImagePreview || formData.banner_image_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ImageIcon className="text-gray-300" />
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0], 'banner')}
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm outline-none focus:border-sharda-blue file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-sharda-blue file:text-white file:cursor-pointer hover:file:bg-blue-600"
-                        />
-                        <input
-                          type="url"
-                          placeholder="Or paste image URL"
-                          value={formData.banner_image_url}
-                          onChange={(e) => setFormData({ ...formData, banner_image_url: e.target.value })}
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-900 dark:text-white text-sm outline-none focus:border-sharda-blue"
-                        />
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Upload file or paste URL. Images will be saved when you create the event.
-                        </p>
-                      </div>
-                    </div>
+                    <ImageField kind="eventBanner" file={bannerImageFile} value={formData.banner_image_url} onFileChange={setBannerImageFile} onRemove={() => setFormData({ ...formData, banner_image_url: '' })} disabled={saving} />
                   </div>
 
                   <div className="md:col-span-2">
@@ -905,16 +753,17 @@ const EventsManager = ({ events, onSave, onDelete, isLoading }) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || saving || loadingDetails || Boolean(detailsError)}
                   className="px-8 py-3 bg-gradient-to-r from-sharda-blue to-blue-600 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:shadow-none transition-all flex items-center gap-2 font-bold"
                 >
-                  {isLoading
+                  {(isLoading || saving)
                     ? "Saving..."
                     : editingId
                     ? "Update Event"
                     : "Create Event"}
                 </button>
               </div>
+              </fieldset>
             </form>
           </div>
         </div>

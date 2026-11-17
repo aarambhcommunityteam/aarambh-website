@@ -13,11 +13,13 @@ import MembersManager from "../components/admin/MembersManager";
 import GalleryManager from "../components/admin/GalleryManager";
 import AdminsManager from "../components/admin/AdminsManager";
 import ResourcesManager from "../components/admin/ResourcesManager";
+import { contentPayload, eventPayload, contentError } from "../lib/contentPayloads";
 
 const Admin = () => {
   const { admin, isLoading: authLoading, login, logout, hasAccess, isAuthenticated } = useAdmin();
   
   const [authError, setAuthError] = useState("");
+  const [dataError, setDataError] = useState("");
   const [loginMode, setLoginMode] = useState("team");
   const [credentials, setCredentials] = useState({
     email: "",
@@ -127,24 +129,8 @@ const Admin = () => {
         );
       }
 
-      // Blog Posts - super_admin sees all, others see only their own
       postsIndex = currentIndex++;
-      if (admin.admin_type === 'super_admin') {
-        promises.push(
-          supabase
-            .from("blog_posts")
-            .select("*")
-            .order("created_at", { ascending: false })
-        );
-      } else {
-        promises.push(
-          supabase
-            .from("blog_posts")
-            .select("*")
-            .eq("created_by", admin.admin_id)
-            .order("created_at", { ascending: false })
-        );
-      }
+      promises.push(supabase.from("blog_posts").select("*").order("created_at", { ascending: false }));
 
       // Gallery - super_admin and admin can see all
       if (hasAccess('gallery')) {
@@ -157,27 +143,11 @@ const Admin = () => {
         );
       }
 
-      // Resources - super_admin sees all, others see only their own
       resourcesIndex = currentIndex++;
-      if (admin.admin_type === 'super_admin') {
-        promises.push(
-          supabase
-            .from("resources")
-            .select("*")
-            .order("created_at", { ascending: false })
-        );
-      } else {
-        promises.push(
-          supabase
-            .from("resources")
-            .select("*")
-            .eq("created_by", admin.admin_id)
-            .order("created_at", { ascending: false })
-        );
-      }
+      promises.push(supabase.from("resources").select("*").order("order_index", { ascending: true }).order("created_at", { ascending: false }));
 
       // Admins - only super_admin
-      if (hasAccess('admins')) {
+      if (hasAccess('admins') && activeTab === 'admins') {
         adminsIndex = currentIndex++;
         promises.push(
           supabase
@@ -188,11 +158,13 @@ const Admin = () => {
       }
 
       const results = await Promise.all(promises);
+      const errors = results.filter(result => result.error).map(result => result.error.message);
+      setDataError(errors.join(" "));
       
       if (eventsIndex >= 0) setEvents(results[eventsIndex].data || []);
       if (membersIndex >= 0) {
         const memberResult = results[membersIndex];
-        if (memberResult.error) throw memberResult.error;
+        if (memberResult.error) console.error(memberResult.error);
         setMembers((memberResult.data || []).map((member) => ({
           ...member,
           is_active: member.is_published,
@@ -223,213 +195,77 @@ const Admin = () => {
   /*                                CRUD Handlers                               */
   /* -------------------------------------------------------------------------- */
 
+  const requireAdmin = () => {
+    if (!supabase || !admin) throw new Error("Your session has expired. Sign in again.");
+  };
+
   const handleCreate = async (table, data) => {
-    if (!supabase || !admin) return;
+    requireAdmin();
     setIsDashboardLoading(true);
-    
-    // Special handling for admins table using RPC
-    if (table === 'admins') {
-      const { error } = await supabase.rpc('create_admin_with_auth', {
-        p_email: data.email,
-        p_password: data.password,
-        p_admin_name: data.admin_name,
-        p_admin_type: data.admin_type,
-        p_team_name: data.team_name,
-        p_admin_position: data.admin_position,
-        p_is_active: data.is_active
-      });
-      if (error) alert(`Error: ${error.message}`);
-    } else if (table === 'members') {
-      // Use the members table directly; no legacy RPC is required.
-      const { is_active, ...memberData } = data;
-      const payload = {
-        ...memberData,
-        is_published: data.is_published ?? is_active ?? false,
-        bio: data.bio || null,
-        display_order: Number(data.display_order) || 0,
-      };
-      const { data: createdMember, error } = await supabase
-        .from("members")
-        .insert(payload)
-        .select("*")
-        .single();
-
-      if (error) {
-        alert(`Error creating member: ${error.message}`);
-        return null;
+    try {
+      let result;
+      if (table === 'admins') {
+        result = await supabase.rpc('create_admin_with_auth', {
+          p_email: data.email, p_password: data.password, p_admin_name: data.admin_name,
+          p_admin_type: data.admin_type, p_team_name: data.team_name,
+          p_admin_position: data.admin_position, p_is_active: data.is_active,
+        });
+      } else {
+        result = await supabase.from(table).insert(contentPayload(table, data)).select('*').single();
       }
-
+      if (result.error) throw result.error;
       await refreshAll();
-      return { id: createdMember.id, ...createdMember };
-    } else {
-      const { error } = await supabase.from(table).insert({
-        ...data,
-        created_by: admin.admin_id,
-      });
-      if (error) alert(`Error: ${error.message}`);
-    }
-    await refreshAll();
+      return result.data;
+    } finally { setIsDashboardLoading(false); }
   };
 
   const handleUpdate = async (table, id, data) => {
-    if (!supabase || !admin) return;
+    requireAdmin();
     setIsDashboardLoading(true);
-    
-    // Special handling for admins table using RPC
-    if (table === 'admins') {
-      const { error } = await supabase.rpc('update_admin', {
-        p_admin_id: id,
-        p_admin_name: data.admin_name,
-        p_email: data.email,
-        p_admin_type: data.admin_type,
-        p_team_name: data.team_name,
-        p_admin_position: data.admin_position,
-        p_is_active: data.is_active
-      });
-      if (error) alert(`Error: ${error.message}`);
-    } else if (table === 'members') {
-      // Map the manager's is_active UI flag to the database's is_published field.
-      const { is_active, ...memberData } = data;
-      const payload = {
-        ...memberData,
-        ...(data.is_published !== undefined || is_active !== undefined
-          ? { is_published: data.is_published ?? is_active }
-          : {}),
-        ...(data.display_order !== undefined
-          ? { display_order: Number(data.display_order) || 0 }
-          : {}),
-      };
-      const { error } = await supabase
-        .from("members")
-        .update(payload)
-        .eq("id", id);
-      if (error) {
-        alert(`Error updating member: ${error.message}`);
-        throw error;
+    try {
+      let result;
+      if (table === 'admins') {
+        result = await supabase.rpc('update_admin', {
+          p_admin_id: id, p_admin_name: data.admin_name, p_email: data.email,
+          p_admin_type: data.admin_type, p_team_name: data.team_name,
+          p_admin_position: data.admin_position, p_is_active: data.is_active,
+        });
+      } else {
+        result = await supabase.from(table).update(contentPayload(table, data)).eq('id', id).select('*').single();
       }
-    } else {
-      const { error } = await supabase.from(table).update(data).eq("id", id);
-      if (error) alert(`Error: ${error.message}`);
-    }
-    await refreshAll();
+      if (result.error) throw result.error;
+      await refreshAll();
+      return result.data;
+    } finally { setIsDashboardLoading(false); }
   };
 
   const handleDelete = async (table, id) => {
-    if (!supabase || !admin) return;
-    if (!confirm("Are you sure you want to delete this specific item?")) return;
+    requireAdmin();
+    if (!confirm("Are you sure you want to delete this item?")) return;
     setIsDashboardLoading(true);
-    
-    // Special handling for admins table using RPC
-    if (table === 'admins') {
-      const { error } = await supabase.rpc('delete_admin', {
-        p_admin_id: id
-      });
-      if (error) alert(`Error: ${error.message}`);
-    } else if (table === 'members') {
-      const { error } = await supabase.from("members").delete().eq("id", id);
-      if (error) {
-        alert(`Error deleting member: ${error.message}`);
-        throw error;
-      }
-    } else {
-      const { error } = await supabase.from(table).delete().eq("id", id);
-      if (error) alert(`Error: ${error.message}`);
-    }
-    await refreshAll();
+    try {
+      const result = table === 'admins'
+        ? await supabase.rpc('delete_admin', { p_admin_id: id })
+        : await supabase.from(table).delete().eq('id', id).select('id').single();
+      if (result.error) throw result.error;
+      await refreshAll();
+    } catch (error) { setDataError(contentError(error)); }
+    finally { setIsDashboardLoading(false); }
   };
 
-  // Specialized Event Saver (Deep Save)
+  // One database transaction saves the event and all of its detail rows.
   const handleSaveEvent = async (eventData, isEdit = false, id = null) => {
-    if (!supabase || !admin) return;
+    requireAdmin();
     setIsDashboardLoading(true);
-
     try {
-      // 1. Separate generic fields from relation fields
-      const { timeline, themes, prizes, ...mainData } = eventData;
-
-      let eventId = id;
-
-      if (isEdit && id) {
-        // Update Main Event
-        const { error } = await supabase
-          .from("events")
-          .update(mainData)
-          .eq("id", id);
-        if (error) throw error;
-      } else {
-        // Create Main Event
-        const { data, error } = await supabase
-          .from("events")
-          .insert({ ...mainData, created_by: admin.admin_id })
-          .select()
-          .single();
-        if (error) throw error;
-        eventId = data.id;
-      }
-
-      // 2. Handle Relations (Timeline, Themes, Prizes)
-      if (isEdit) {
-        await Promise.all([
-          supabase
-            .from("event_timeline_items")
-            .delete()
-            .eq("event_id", eventId),
-          supabase.from("event_themes").delete().eq("event_id", eventId),
-          supabase.from("event_prizes").delete().eq("event_id", eventId),
-        ]);
-      }
-
-      const operations = [];
-
-      if (timeline && timeline.length > 0) {
-        const timelineRows = timeline.map((item, index) => ({
-          event_id: eventId,
-          title: item.title,
-          date: item.date,
-          time: item.time,
-          label: item.label || "COMPLETE",
-          description: item.description,
-          order_index: index,
-          created_by: admin.admin_id,
-        }));
-        operations.push(
-          supabase.from("event_timeline_items").insert(timelineRows)
-        );
-      }
-
-      if (themes && themes.length > 0) {
-        const themeRows = themes.map((theme, index) => ({
-          event_id: eventId,
-          theme,
-          order_index: index,
-          created_by: admin.admin_id,
-        }));
-        operations.push(supabase.from("event_themes").insert(themeRows));
-      }
-
-      if (prizes && prizes.length > 0) {
-        const prizeRows = prizes.map((prize, index) => ({
-          event_id: eventId,
-          position: prize.position,
-          amount: prize.amount,
-          description: prize.description,
-          created_by: admin.admin_id,
-        }));
-        operations.push(supabase.from("event_prizes").insert(prizeRows));
-      }
-
-      await Promise.all(operations);
-      
-      // Return event ID for image upload
-      return { id: eventId };
-    } catch (error) {
-      console.error("Save Event Error:", error);
-      alert(`Failed to save event: ${error.message}`);
-      throw error;
-    } finally {
+      const { data, error } = await supabase.rpc('save_event_content', {
+        p_event_id: isEdit ? id : null,
+        p_event: eventPayload(eventData),
+      });
+      if (error) throw error;
       await refreshAll();
-      setIsDashboardLoading(false);
-    }
+      return { id: data };
+    } finally { setIsDashboardLoading(false); }
   };
 
   /* -------------------------------------------------------------------------- */
@@ -905,6 +741,7 @@ const Admin = () => {
         </button>
       }
     >
+      {dataError && <div role="alert" className="mb-6 rounded-xl bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-200">{dataError}</div>}
       {renderContent()}
     </AdminLayout>
   );
