@@ -1,0 +1,79 @@
+/* Scoped to articles and the editor preview; navigation/footer stay unchanged. */
+.journal-page {
+  background: radial-gradient(ellipse at 50% 0, #087bff0d, transparent 620px), #080d1a;
+  color: #e3e8f2;
+  padding: 40px 24px 88px;
+}
+
+.journal-shell { width: 100%; max-width: 780px; min-width: 0; margin-inline: auto; }
+.journal-back { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 600; color: #7dc9ff; text-decoration: none; }
+.journal-back:hover { color: #c2afff; }
+.journal-header { margin-top: 28px; }
+.journal-cover { aspect-ratio: 16 / 9; width: 100%; overflow: hidden; border-radius: 18px; border: 1px solid #ffffff14; background: #101b31; }
+.journal-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.journal-heading { margin-top: 32px; }
+.journal-category { display: inline-block; margin: 0 0 16px; padding: 6px 11px; border: 1px solid #9270ff45; border-radius: 6px; background: #9270ff12; color: #c2afff; font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+.journal-title { margin: 0; color: #f5f7ff; font-size: 40px; font-weight: 750; line-height: 1.2; letter-spacing: -.035em; text-wrap: balance; overflow-wrap: break-word; }
+.journal-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 22px; color: #9eacc4; font-size: 14px; line-height: 1.65; }
+.journal-author { color: #d8e2f5; font-weight: 500; }
+.journal-meta-dot { color: #9270ff; }
+.journal-summary { margin: 34px 0 0; padding: 20px 24px; border-left: 3px solid #087bff; border-radius: 0 12px 12px 0; background: linear-gradient(110deg, #087bff0f, #9270ff0a); }
+.journal-summary-label { display: block; margin-bottom: 8px; color: #7dc9ff; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.journal-summary p { margin: 0; color: #c4d0e4; font-size: 19px; line-height: 1.75; overflow-wrap: break-word; }
+.journal-body { margin-top: 42px; }
+.journal-end { margin-top: 52px; padding-top: 24px; border-top: 1px solid #ffffff14; }
+
+.journal-content { min-width: 0; color: #d1daea; font-size: 18px; line-height: 1.8; overflow-wrap: break-word; }
+.journal-content p { margin: 0 0 20px; line-height: inherit; overflow-wrap: break-word; }
+.journal-content :is(h1,h2,h3,h4,h5,h6) { color: #f2f5fc; font-weight: 700; line-height: 1.3; letter-spacing: -.025em; overflow-wrap: break-word; scroll-margin-top: 100px; }
+.journal-content h1 { margin: 48px 0 22px; font-size: 38px; line-height: 1.2; }
+.journal-content h2 { margin: 40px 0 18px; font-size: 28px; }
+.journal-content h3 { margin: 32px 0 16px; font-size: 23px; }
+.journal-content :is(h4,h5,h6) { margin: 28px 0 14px; font-size: 20px; }
+.journal-content > :first-child { margin-top: 0; }
+.journal-content > :last-child { margin-bottom: 0; }
+.journal-content strong { color: #f1f5ff; font-weight: 700; }
+.journal-content em { font-style: italic; }
+.journal-content a { color: #6bbaff; text-decoration: underline; text-decoration-color: #087bff70; text-underline-offset: 4px; overflow-wrap: anywhere; }
+.journal-content a:hover { color: #b9a1ff; }
+.journal-content :is(ul,ol) { margin: 0 0 24px; padding-left: 28px; }
+.journal-content ul { list-style-type: disc; }
+.journal-content ol { list-style-type: decimal; }
+.journal-content li { padding-left: 4px; margin-bottom: 8px; }
+.journal-content li::marker { color: #9270ff; }
+.journal-content li > :is(ul,ol) { margin-top: 8px; margin-bottom: 8px; }
+.journal-content li > p { margin-bottom: 8px; }
+.journal-content .task-list-item { list-style: none; }
+.journal-content input[type="checkbox"] { margin-right: 8px; accent-color: #087bff; }
+.journal-content blockquote { margin: 28px 0; padding: 4px 0 4px 22px; border-left: 3px solid #9270ff; color: #bdcbe2; }
+.journal-content blockquote > :last-child { margin-bottom: 0; }
+.journal-content hr { height: 1px; border: 0; background: #ffffff1f; margin: 36px 0; }
+.journal-content img { display: block; max-width: 100%; height: auto; margin: 28px auto; border-radius: 12px; }
+.journal-content pre { max-width: 100%; overflow-x: auto; margin: 24px 0; padding: 20px; border: 1px solid #ffffff14; border-radius: 12px; background: #050a14; font-size: 15px; line-height: 1.7; white-space: pre; }
+.journal-content code { padding: 2px 5px; border-radius: 4px; background: #9270ff18; color: #d7caff; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .88em; }
+.journal-content pre code { padding: 0; background: none; color: #d6e4fa; font-size: inherit; overflow-wrap: normal; }
+.journal-table-scroll { max-width: 100%; overflow-x: auto; margin: 26px 0; border: 1px solid #ffffff1f; border-radius: 10px; }
+.journal-content table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.journal-content :is(th,td) { padding: 12px 16px; border-bottom: 1px solid #ffffff14; text-align: left; }
+.journal-content th { background: #087bff12; color: #f2f5fc; font-weight: 600; }
+.journal-content tr:last-child td { border-bottom: 0; }
+.journal-editor-preview { margin-top: 16px; max-height: 540px; overflow: auto; padding: 24px; border: 1px solid #9270ff45; border-radius: 12px; background: #080d1a; }
+
+@media (max-width: 640px) {
+  .journal-page { padding: 24px 20px 56px; }
+  .journal-header { margin-top: 22px; }
+  .journal-cover { border-radius: 12px; }
+  .journal-heading { margin-top: 24px; }
+  .journal-title { font-size: 32px; line-height: 1.22; letter-spacing: -.03em; }
+  .journal-category { font-size: 11px; margin-bottom: 14px; }
+  .journal-meta { gap: 6px 10px; margin-top: 18px; font-size: 13px; }
+  .journal-summary { margin-top: 26px; padding: 16px 18px; }
+  .journal-summary p { font-size: 17px; }
+  .journal-body { margin-top: 32px; }
+  .journal-content { font-size: 17px; line-height: 1.8; }
+  .journal-content h1 { font-size: 30px; margin-top: 36px; }
+  .journal-content h2 { font-size: 25px; margin-top: 32px; }
+  .journal-content h3 { font-size: 21px; margin-top: 28px; }
+  .journal-content :is(ul,ol) { padding-left: 24px; }
+  .journal-editor-preview { padding: 18px; }
+}

@@ -1,9 +1,11 @@
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, X, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { contentError } from '../../lib/contentPayloads';
 import { saveWithImages } from '../../lib/imageUploads';
 import ImageField from './ImageField';
+
+const ArticleEditor = lazy(() => import('./ArticleEditor'));
 
 const inputClass = 'w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white';
 
@@ -29,6 +31,7 @@ export default function ContentManager({ title, singular, items, initial, fields
     if (busy.current) return;
     setError('');
     if (!form.title.trim()) { setError('Enter a title.'); return; }
+    if (fields.some(field => field.type === 'article' && field.required && !form[field.name]?.trim())) { setError('Enter the full article before saving.'); return; }
     if (imageRequired && !file && !form[imageField]) { setError('Choose a photo before saving.'); return; }
     for (const field of fields.filter(field => field.type === 'url')) {
       if (!form[field.name]) continue;
@@ -60,7 +63,7 @@ export default function ContentManager({ title, singular, items, initial, fields
           <fieldset disabled={saving} className="space-y-6">
             <div className="flex justify-between items-center"><h3 className="text-xl font-bold dark:text-white">{editingId ? 'Edit' : 'Add'} {singular}</h3><button type="button" aria-label="Close form" onClick={close}><X /></button></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {fields.map(field => <label key={field.name} className={`block text-sm font-medium text-gray-700 dark:text-gray-200 ${field.type === 'textarea' || field.name === 'title' ? 'sm:col-span-2' : ''}`}>
+              {fields.map(field => field.type === 'article' ? <Suspense key={field.name} fallback={<p role="status">Loading article editor…</p>}><ArticleEditor value={form[field.name]} onChange={value => setForm({ ...form, [field.name]: value })} required={field.required} /></Suspense> : <label key={field.name} className={`block text-sm font-medium text-gray-700 dark:text-gray-200 ${field.type === 'textarea' || field.name === 'title' ? 'sm:col-span-2' : ''}`}>
                 <span className="mb-2 block">{field.label}{field.required && ' *'}</span>
                 {field.options ? <select className={inputClass} value={form[field.name] ?? ''} onChange={e => setForm({ ...form, [field.name]: e.target.value })}>{field.options.map(option => <option key={option} value={option}>{option}</option>)}</select>
                 : field.type === 'textarea' ? <textarea className={inputClass} rows={field.name === 'content' ? 12 : 3} required={field.required} value={form[field.name] ?? ''} onChange={e => setForm({ ...form, [field.name]: e.target.value })} />

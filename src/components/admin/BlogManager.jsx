@@ -5,7 +5,7 @@ const fields = [
   { name: 'author', label: 'Author' },
   { name: 'category', label: 'Category' },
   { name: 'excerpt', label: 'Short summary', type: 'textarea' },
-  { name: 'content', label: 'Full article', type: 'textarea', required: true },
+  { name: 'content', label: 'Full article', type: 'article', required: true },
 ];
 export default function BlogManager({ posts, ...props }) {
   return <ContentManager {...props} title="Blog posts" singular="Article" items={posts} initial={initial} fields={fields} imageKind="blog" imageField="cover_image_url" />;
