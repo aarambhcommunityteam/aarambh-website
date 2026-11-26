@@ -20,6 +20,9 @@ import Admin from './pages/Admin';
 import Builder from './pages/Builder';
 import IRDP from './pages/IRDP';
 import Founder from './pages/Founder';
+import ProductTesting from './pages/ProductTesting';
+import ProductTestingStudents from './pages/ProductTestingStudents';
+import ProductTestingStartups from './pages/ProductTestingStartups';
 
 function App() {
   return (
@@ -46,6 +49,9 @@ function App() {
               <Route path="/builder" element={<Builder />} />
               <Route path="/irdp" element={<IRDP />} />
               <Route path="/founder" element={<Founder />} />
+              <Route path="/product-testing" element={<ProductTesting />} />
+              <Route path="/product-testing/students" element={<ProductTestingStudents />} />
+              <Route path="/product-testing/startups" element={<ProductTestingStartups />} />
             </Routes>
           </main>
 

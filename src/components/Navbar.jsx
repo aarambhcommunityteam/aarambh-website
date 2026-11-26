@@ -12,6 +12,7 @@ const navLinks = [
   { name: 'Founder', path: '/founder' },
   { name: 'Resources', path: '/resources' },
   { name: 'Blog', path: '/blog' },
+  { name: 'Product Testing', path: '/product-testing' },
   { name: 'Contact', path: '/contact' },
 ];
 
@@ -63,7 +64,7 @@ const Navbar = () => {
     }
   };
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || (path === '/product-testing' && location.pathname.startsWith(`${path}/`));
 
   const linkClass = (path, mobile = false) =>
     `${mobile ? 'block w-full' : 'whitespace-nowrap'} rounded-lg px-3 py-2.5 ${
@@ -105,7 +106,7 @@ const Navbar = () => {
             </span>
           </Link>
 
-          <div className="hidden items-center gap-0.5 lg:flex">
+          <div className="hidden items-center gap-0.5 xl:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -121,7 +122,7 @@ const Navbar = () => {
           <button
             type="button"
             onClick={() => setIsOpen((open) => !open)}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#19C8FF] lg:hidden"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-gray-200 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#19C8FF] xl:hidden"
             aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
             aria-expanded={isOpen}
             aria-controls="aarambh-mobile-navigation"
@@ -139,7 +140,7 @@ const Navbar = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-gray-800 bg-[#080d1a] lg:hidden"
+            className="overflow-hidden border-t border-gray-800 bg-[#080d1a] xl:hidden"
           >
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-1 px-3 py-3 sm:grid-cols-2 sm:px-6">
               {navLinks.map((link) => (

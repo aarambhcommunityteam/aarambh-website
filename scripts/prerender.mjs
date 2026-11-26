@@ -9,7 +9,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { extname, join, resolve, sep } from 'node:path';
+import { dirname, extname, join, resolve, sep } from 'node:path';
 
 const dist = resolve('dist');
 const baseUrl = 'http://127.0.0.1:4178';
@@ -25,9 +25,24 @@ const routes = [
   '/contact',
   '/founder',
   '/irdp',
+  '/product-testing',
+  '/product-testing/students',
+  '/product-testing/startups',
 ];
 
 const pageMetadata = {
+  '/product-testing': {
+    title: 'Product Testing | AARAMBH Community',
+    description: 'Connect student perspectives with early-stage products. Apply as a student tester or a startup for AARAMBH’s first product-testing pilot.',
+  },
+  '/product-testing/students': {
+    title: 'Become a Student Product Tester | AARAMBH',
+    description: 'Try early-stage products, follow a short testing brief and share structured feedback. Apply to be an AARAMBH student tester.',
+  },
+  '/product-testing/startups': {
+    title: 'Startup Product Testing Pilot | AARAMBH',
+    description: 'Apply for AARAMBH’s proposed free 30-day pilot for one selected startup, targeting 30–50 student testers and a structured feedback report.',
+  },
   '/': {
     title: 'AARAMBH | The First Step of Entrepreneurship',
     description:
@@ -106,9 +121,11 @@ function escapeHtml(value) {
 }
 
 function routeOutput(route) {
-  return route === '/'
+  const output = route === '/'
     ? join(dist, 'index.html')
     : join(dist, `${route.slice(1)}.html`);
+  mkdirSync(dirname(output), { recursive: true });
+  return output;
 }
 
 function generateMetadataOnly() {
