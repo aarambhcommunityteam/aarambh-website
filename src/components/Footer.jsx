@@ -1,6 +1,8 @@
 import React from 'react';
 import { Github, Linkedin, Twitter, Instagram, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { FaWhatsapp } from 'react-icons/fa';
+import { WHATSAPP_COMMUNITY_URL } from '../lib/communityLinks';
 
 const Footer = () => {
   return (
@@ -82,6 +84,15 @@ const Footer = () => {
                 <Mail className="w-4 h-4" />
               </a>
             </div>
+            <a
+              href={WHATSAPP_COMMUNITY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-[#087BC1] transition-colors hover:underline dark:text-[#00A9D6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00A9D6]"
+            >
+              <FaWhatsapp className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span>WhatsApp Community<span className="sr-only"> (opens in a new tab)</span></span>
+            </a>
             <div className="mt-4">
               <Link
                 to="/contact"
