@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import { FaWhatsapp } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { fadeInUp, staggerContainer, pageTransition, scaleIn, hoverScale } from '../utils/animations';
 import { supabase } from '../lib/supabaseClient';
 import NewsletterForm from '../components/NewsletterForm';
+import { WHATSAPP_COMMUNITY_URL } from '../lib/communityLinks';
 import {
   ArrowRight,
+  ExternalLink,
   Calendar,
   Users,
   BookOpen,
@@ -20,6 +23,7 @@ import {
 
 const Home = () => {
   const [events, setEvents] = useState([]);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -274,6 +278,56 @@ const Home = () => {
           </div>
         </div>
 
+      </section>
+
+      {/* WhatsApp Community */}
+      <section
+        aria-labelledby="whatsapp-community-heading"
+        className="relative z-10 px-4 py-12 sm:px-6 lg:px-8"
+      >
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: reduceMotion ? 0 : 0.6 }}
+          className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-[#00A9D6]/30 bg-[#11152E] p-6 shadow-xl shadow-[#11152E]/20 sm:p-10 lg:p-12"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#087BC1] via-[#00A9D6] to-[#9270FF]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-[#9270FF]/10 blur-3xl" />
+          <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
+            <div className="max-w-2xl">
+              <div className="mb-6 flex items-center gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#00A9D6]/30 bg-[#087BC1]/15 text-[#00A9D6]">
+                  <FaWhatsapp className="h-7 w-7" aria-hidden="true" />
+                </span>
+                <p className="text-xs font-semibold uppercase leading-relaxed tracking-[0.16em] text-[#00A9D6]">
+                  Join Our WhatsApp Community
+                </p>
+              </div>
+              <h2 id="whatsapp-community-heading" className="mb-4 text-3xl font-bold leading-tight text-white sm:text-4xl">
+                Join the AARAMBH Community
+              </h2>
+              <p className="text-base leading-relaxed text-gray-300 sm:text-lg">
+                Connect with aspiring entrepreneurs, students, startup founders, innovators, and opportunities from across the startup ecosystem.
+              </p>
+            </div>
+            <div className="w-full shrink-0 sm:w-auto lg:max-w-xs">
+              <a
+                href={WHATSAPP_COMMUNITY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-describedby="whatsapp-new-tab-note"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#087BC1] px-5 py-4 text-center text-base font-semibold leading-relaxed text-white shadow-lg shadow-[#087BC1]/20 transition-colors hover:bg-[#076BA8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00A9D6] sm:w-auto sm:px-6"
+              >
+                Join WhatsApp Community
+                <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </a>
+              <p id="whatsapp-new-tab-note" className="mt-3 text-center text-xs leading-relaxed text-gray-400">
+                Opens the WhatsApp invitation in a new tab.
+              </p>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* Explore Our Events */}
